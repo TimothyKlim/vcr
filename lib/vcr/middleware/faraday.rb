@@ -71,15 +71,27 @@ module VCR
         end
 
         def response_for(env)
-          response = env[:response]
-          return nil unless response
+          if ::Faraday.const_defined?(:Env) && env.is_a?(::Faraday::Env)
+            response = env
+            return nil if response.status.nil?
 
-          VCR::Response.new(
-            VCR::ResponseStatus.new(response.status, nil),
-            response.headers,
-            raw_body_from(response.body),
-            nil
-          )
+            VCR::Response.new(
+                VCR::ResponseStatus.new(response.status, nil),
+                response.response_headers,
+                raw_body_from(response.body),
+                nil
+            )
+          else
+            response = env[:response]
+            return nil unless response
+
+            VCR::Response.new(
+                VCR::ResponseStatus.new(response.status, nil),
+                response.headers,
+                raw_body_from(response.body),
+                nil
+            )
+          end
         end
 
         def on_ignored_request
